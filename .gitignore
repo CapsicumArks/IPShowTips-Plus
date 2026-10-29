@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# PyInstaller 打包产物
+build/
+dist/
+*.spec
+
+# 系统 / 编辑器
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+
+# 临时文件
+*.log
+ipswitch_apply.ps1
+ipswitch_result.txt
+
+# 不发布的本地脚本
+IPSwitch.bat
+
+# 本地真实网络预设（含内网拓扑，勿提交）
+ip_presets.json
