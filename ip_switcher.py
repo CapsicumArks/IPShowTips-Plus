@@ -100,7 +100,7 @@ def _run_powershell(cmd, timeout=30):
     return proc.stdout.strip()
 
 
-_VIRTUAL_NIC_RE = "VMware|Virtual|Loopback|vEthernet|WSL|Docker|Hyper-V"
+_VIRTUAL_NIC_RE = "VMware|Virtual|Loopback|vEthernet|WSL|Docker|Hyper-V|VMware Network Adapter"
 
 
 def _default_route_ip():
@@ -378,7 +378,7 @@ class IPSwitchDialog(tk.Toplevel):
     def _fill_preset(self, preset):
         last = self.last_var.get().strip()
         if not last.isdigit() or not 1 <= int(last) <= 254:
-            last = "100"
+            last = "184"
             self.last_var.set(last)
         self.ip_var.set(f"{preset['base']}.{last}")
         self.mask_var.set(preset["mask"])

@@ -26,7 +26,7 @@ except ImportError:
 
 TRANSPARENT = "#010101"
 APP_TITLE = "IP悬浮窗"
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.4.0"
 RUN_REG_PATH = r"Software\Microsoft\Windows\CurrentVersion\Run"
 RUN_REG_NAME = "IPShowTips"
 
@@ -118,14 +118,31 @@ class IPFloatMonitor:
         )
         self.label_loc.pack(pady=1)
 
+        # 公网 IP 行
+        self.pub_row = tk.Frame(self.panel_main, bg="white")
+        self.pub_row.pack(fill="x", pady=1)
+        self.label_public = tk.Label(
+            self.pub_row,
+            text="公网: --",
+            fg=self.accent_color,
+            bg="white",
+            font=("Consolas", 12, "bold"),
+        )
+        self.label_public.pack(side="left")
+        self._copy_btn(self.pub_row, self._copy_public_ip)
+
+        # 内网 IP 行
+        self.local_row = tk.Frame(self.panel_main, bg="white")
+        self.local_row.pack(fill="x", pady=1)
         self.label_local = tk.Label(
-            self.panel_main,
+            self.local_row,
             text="内网: --",
             fg="#0F766E",
             bg="white",
             font=("Consolas", 12, "bold"),
         )
-        self.label_local.pack(pady=1)
+        self.label_local.pack(side="left")
+        self._copy_btn(self.local_row, self._copy_local_ip)
 
         self.label_refresh = tk.Label(
             self.panel_main,
@@ -426,20 +443,24 @@ class IPFloatMonitor:
         if self._pending_ip_ok:
             ip, location = self._pending_ip_ok
             self._pending_ip_ok = None
+            self.ip_error = False
             old_ip = self.last_known_ip
             if old_ip is not None and old_ip != ip:
                 self._show_ip_change_alert(old_ip, ip, location)
             self.last_known_ip = ip
             self.label_ip.config(text=f"[ {ip} ]")
+            self.label_public.config(text=f"公网: {ip}")
             self.label_loc.config(text=f"归属地: {location}")
             self.label_refresh.config(text=f"最后刷新: {now.strftime('%H:%M:%S')}")
             return
 
         if self._pending_ip_error:
             self._pending_ip_error = False
+            self.ip_error = True
             self.label_ip.config(text="[ 网络异常 ]")
+            self.label_public.config(text="公网: 获取失败")
             self.label_loc.config(text="归属地: 获取失败")
-            self.label_refresh.config(text=f"最后刷新: {now.strftime('%H:%M:%S')}")
+            self.label_refresh.config(text=f"最后刷新: {now.strftime('%H:%M:%S')} · 单击重试")
 
     def _close_ip_alert(self):
         if self.alert_window is not None:
@@ -901,6 +922,41 @@ class IPFloatMonitor:
             self.update_local_ips()
 
         ip_switcher.IPSwitchDialog(self.root, on_applied=on_applied)
+
+    # ---- 复制功能 ----
+
+    def _copy_btn(self, parent, handler):
+        btn = tk.Label(
+            parent,
+            text="📋",
+            fg="#999", bg="white", cursor="hand2",
+            font=("微软雅黑", 11),
+        )
+        btn.pack(side="right", padx=(10, 0))
+        btn.bind("<Button-1>", lambda e: handler())
+        btn.bind("<Enter>", lambda e: btn.config(fg=self.accent_color))
+        btn.bind("<Leave>", lambda e: btn.config(fg="#999"))
+        return btn
+
+    def _copy_public_ip(self):
+        self._do_copy("公网 IP", self.label_public.cget("text"))
+
+    def _copy_local_ip(self):
+        self._do_copy("内网 IP", self.label_local.cget("text"))
+
+    def _do_copy(self, label, full_text):
+        ip = full_text.split(":", 1)[-1].strip()
+        if ip in ("", "--", "获取失败"):
+            return
+        self.root.clipboard_clear()
+        self.root.clipboard_append(ip)
+        self.root.update()
+        self._flash_feedback(f"已复制 {label}: {ip}")
+
+    def _flash_feedback(self, msg):
+        orig = self.label_refresh.cget("text")
+        self.label_refresh.config(text=msg, fg="#10B981")
+        self.root.after(2000, lambda: self.label_refresh.config(text=orig, fg="#666"))
 
 
 if __name__ == "__main__":
